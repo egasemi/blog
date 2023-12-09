@@ -4,7 +4,7 @@ import { Category } from 'src/categories/schemas/categories.shcema';
 
 export type PostDocument = mongoose.HydratedDocument<Post>;
 
-@Schema({ toObject: { versionKey: false } })
+@Schema()
 export class Post {
   @Prop({ required: true })
   title: string;
@@ -19,4 +19,10 @@ export class Post {
   categories: Category[];
 }
 
-export const PostShcema = SchemaFactory.createForClass(Post);
+export const PostShcema = SchemaFactory.createForClass(Post).pre(
+  ['find', 'findOneAndUpdate', 'findOneAndDelete', 'findOne'],
+  function (next) {
+    this.select({ __v: false });
+    next();
+  },
+);

@@ -1,6 +1,5 @@
-import { Prop, Schema } from '@nestjs/mongoose';
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import * as mongoose from 'mongoose';
-import { Post } from 'src/posts/schemas/posts.schema';
 
 export type UserDocument = mongoose.HydratedDocument<User>;
 
@@ -15,6 +14,14 @@ export class User {
   @Prop({ required: true })
   password: string;
 
-  @Prop([{ type: mongoose.Schema.Types.ObjectId, ref: 'post' }])
-  posts: Post[];
+  @Prop({ default: 'user', enum: ['user', 'admin'] })
+  role: string;
 }
+
+export const UserSchema = SchemaFactory.createForClass(User).pre(
+  ['find', 'findOneAndUpdate', 'findOneAndDelete', 'findOne'],
+  function (next) {
+    this.select({ __v: false });
+    next();
+  },
+);

@@ -8,34 +8,33 @@ import { UpdateCategoryDto } from './dto/update-category.dto';
 import { InjectModel } from '@nestjs/mongoose';
 import { Category } from './schemas/categories.shcema';
 import { Model } from 'mongoose';
-import { Post } from 'src/posts/schemas/posts.schema';
+import { PostsService } from 'src/posts/posts.service';
 
 @Injectable()
 export class CategoriesService {
   constructor(
     @InjectModel(Category.name) private categoryModel: Model<Category>,
-    @InjectModel(Post.name) private postModel: Model<Post>,
+    private postsService: PostsService,
   ) {}
   async create(createCategoryDto: CreateCategoryDto): Promise<Category> {
     try {
       const createdCategory = new this.categoryModel(createCategoryDto);
-      await createdCategory.save();
-      return createdCategory.toObject();
+      return await createdCategory.save();
     } catch (e) {
       console.error(e);
     }
   }
 
   async findAll(): Promise<Category[]> {
-    const categories = await this.categoryModel.find().select('name').exec();
+    const categories = await this.categoryModel.find().lean();
     if (!categories) throw new NotFoundException();
     return categories;
   }
 
   async findOne(id: string): Promise<Category> {
-    const category = await this.categoryModel.findById(id).exec();
+    const category = await this.categoryModel.findById(id).lean();
     if (!category) throw new NotFoundException();
-    return category.toObject();
+    return category;
   }
 
   async update(
@@ -44,22 +43,18 @@ export class CategoriesService {
   ): Promise<Category> {
     const updatedCategory = await this.categoryModel
       .findByIdAndUpdate(id, updateCategoryDto, { new: true })
-      .exec();
-    return updatedCategory.toObject();
+      .lean();
+    return updatedCategory;
   }
 
   async remove(id: string): Promise<Category> {
-    const updatePost = await this.postModel.updateMany(
-      { categories: id },
-      { $pull: { categories: id } },
-    );
-
-    if (!updatePost.acknowledged) {
-      throw new InternalServerErrorException('no se pudo actualizar los posts');
+    const updatedPosts = await this.postsService.cascadeCategoryDelete(id);
+    if (!updatedPosts) {
+      throw new InternalServerErrorException('no se pudieron editar los posts');
     }
     const deletedCategory = await this.categoryModel
-      .findByIdAndRemove(id)
-      .exec();
-    return deletedCategory.toObject();
+      .findByIdAndDelete(id)
+      .lean();
+    return deletedCategory;
   }
 }

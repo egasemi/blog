@@ -17,10 +17,7 @@ export class PostsService {
   }
 
   async findAll(): Promise<Post[]> {
-    const posts = await this.postModel
-      .find()
-      .populate('categories', 'name')
-      .select('-__v');
+    const posts = await this.postModel.find().populate('categories', 'name');
     if (!posts) throw new NotFoundException();
     return posts;
   }
@@ -41,10 +38,20 @@ export class PostsService {
     return updatedPost.toObject();
   }
 
+  async cascadeCategoryDelete(id: string) {
+    const updatePost = await this.postModel.updateMany(
+      { categories: id },
+      { $pull: { categories: id } },
+    );
+
+    return updatePost.acknowledged;
+  }
+
   async remove(id: string): Promise<Post> {
     const deletedPost = await this.postModel
       .findByIdAndDelete(id)
-      .populate('categories', 'name');
-    return deletedPost.toObject();
+      .populate('categories', 'name')
+      .lean();
+    return deletedPost;
   }
 }
