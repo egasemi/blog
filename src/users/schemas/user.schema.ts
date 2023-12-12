@@ -5,10 +5,19 @@ export type UserDocument = mongoose.HydratedDocument<User>;
 
 @Schema()
 export class User {
-  @Prop({ required: true })
+  @Prop({ unique: true, required: true, minlength: 3, maxlength: 10 })
   username: string;
 
-  @Prop({ required: true })
+  @Prop({
+    unique: true,
+    required: true,
+    validate: {
+      validator: function (v: string) {
+        return /^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/.test(v);
+      },
+      message: (props) => `${props.value} is not a valid email`,
+    },
+  })
   email: string;
 
   @Prop({ required: true })

@@ -1,28 +1,29 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import * as mongoose from 'mongoose';
-import { Category } from 'src/categories/schemas/categories.shcema';
+const { ObjectId } = mongoose.Schema.Types;
 
 export type PostDocument = mongoose.HydratedDocument<Post>;
 
-@Schema()
+@Schema({ toObject: { versionKey: false } })
 export class Post {
   @Prop({ required: true })
   title: string;
 
-  @Prop({ required: true })
+  @Prop({ required: true, type: ObjectId, ref: 'User' })
   author: string;
 
   @Prop({ required: true })
   content: string;
 
-  @Prop([{ type: mongoose.Schema.Types.ObjectId, ref: 'Category' }])
-  categories: Category[];
+  @Prop({ index: true })
+  categories: string[];
 }
 
 export const PostShcema = SchemaFactory.createForClass(Post).pre(
   ['find', 'findOneAndUpdate', 'findOneAndDelete', 'findOne'],
   function (next) {
     this.select({ __v: false });
+    this.populate('author', 'username');
     next();
   },
 );

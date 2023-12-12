@@ -1,8 +1,8 @@
-import { CategoryDocument } from 'src/categories/schemas/categories.shcema';
+import { UserDocument } from 'src/users/schemas/user.schema';
 
 export class CreatePostDto {
   title: string;
-  author: string;
   content: string;
-  categories: CategoryDocument['_id'][];
+  author: UserDocument['_id'];
+  categories?: string[];
 }
